@@ -209,7 +209,6 @@ function getSelectedVoice() {
 
 async function speak(text) {
   if (!ttsEnabled) return;
-  await sendToContent({ type: 'STOP_LISTENING' });
   return new Promise(resolve => {
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
@@ -218,16 +217,20 @@ async function speak(text) {
     if (v) { utt.voice = v; utt.lang = v.lang; }
     speaking = true;
     setStatus('speaking');
-    utt.onend = utt.onerror = async () => {
+    utt.onend = utt.onerror = () => {
       speaking = false;
-      if (micActive) {
-        await sendToContent({ type: 'START_LISTENING' });
-        setStatus('listening');
-      }
+      if (micActive) setStatus('listening');
       resolve();
     };
     window.speechSynthesis.speak(utt);
   });
+}
+
+function interruptTTS() {
+  if (!speaking) return;
+  window.speechSynthesis.cancel();
+  speaking = false;
+  if (micActive) setStatus('listening');
 }
 
 function populateVoices() {
@@ -512,13 +515,14 @@ async function initSession() {
 // ── Incoming messages from content script ─────────────────────────────
 chrome.runtime.onMessage.addListener(async msg => {
   if (msg.type === 'TRANSCRIPT_INTERIM') {
+    if (speaking) interruptTTS();
     const prefix = buffer.length ? `${buffer.join(' ')} | ` : '';
     interimEl.textContent = prefix + msg.text;
     return;
   }
 
   if (msg.type === 'TRANSCRIPT_FINAL') {
-    if (speaking) { renderBuffer(); return; }
+    if (speaking) interruptTTS();
     await handleTranscript(msg.text); // renderBuffer() runs inside
     return;
   }
