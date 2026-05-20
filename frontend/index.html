@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voice Link</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">voicelink-ai</div>
+    <div class="status">
+      <span id="status-dot" class="dot idle"></span>
+      <span id="status-text">idle</span>
+    </div>
+    <div class="controls">
+      <button id="mic-toggle" class="primary">Start session</button>
+      <button id="tasks-toggle" class="secondary" title="Toggle task sidebar">tasks</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="pane transcript-pane">
+      <div class="pane-header">transcript</div>
+      <div id="transcript" class="transcript"></div>
+    </section>
+
+    <section class="pane markdown-pane">
+      <div class="pane-header">markdown</div>
+      <article id="markdown" class="markdown">
+        <div class="placeholder">Ask for a breakdown, code, or write-up to see rich content here.</div>
+      </article>
+    </section>
+
+    <aside id="task-sidebar" class="pane task-sidebar">
+      <div class="pane-header">tasks <span id="task-count" class="count"></span></div>
+      <ul id="task-list" class="task-list"></ul>
+    </aside>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
