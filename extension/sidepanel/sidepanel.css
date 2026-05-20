@@ -22,10 +22,80 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 8px 12px;
   background: #161b22;
   border-bottom: 1px solid #21262d;
   flex-shrink: 0;
+}
+
+.mode-toggle {
+  display: flex;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mode-toggle .mode {
+  background: transparent;
+  border: none;
+  color: #6e7681;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.mode-toggle .mode + .mode { border-left: 1px solid #30363d; }
+.mode-toggle .mode:hover { color: #c9d1d9; }
+.mode-toggle .mode.active { background: #21262d; color: #58a6ff; }
+
+/* ── Settings ── */
+#settings {
+  background: #0d1117;
+  border-bottom: 1px solid #21262d;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+#settings summary {
+  padding: 6px 12px;
+  cursor: pointer;
+  color: #6e7681;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  user-select: none;
+}
+#settings summary:hover { color: #c9d1d9; }
+#settings[open] summary { color: #c9d1d9; border-bottom: 1px solid #21262d; }
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+}
+.settings-grid label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c9d1d9;
+}
+.settings-grid label > span:first-child {
+  min-width: 50px;
+  color: #6e7681;
+}
+#voiceSelect {
+  flex: 1;
+  background: #161b22;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+#rateSlider {
+  flex: 1;
+  accent-color: #58a6ff;
 }
 
 .status {
