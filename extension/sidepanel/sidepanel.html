@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceLink AI</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <div id="app">
+
+    <header>
+      <span id="status" class="status idle">Idle</span>
+      <button id="micToggle">⏺ Start</button>
+    </header>
+
+    <section id="transcript">
+      <div id="messages"></div>
+      <div id="interim"></div>
+    </section>
+
+    <section id="tasks-section">
+      <div class="section-header">
+        <span>Tasks</span>
+        <button id="clearDone">Clear done</button>
+      </div>
+      <ul id="taskList"></ul>
+      <div class="add-row">
+        <input id="taskInput" type="text" placeholder="Add task…" />
+        <button id="addTaskBtn">+</button>
+      </div>
+    </section>
+
+  </div>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
