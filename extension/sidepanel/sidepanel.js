@@ -330,6 +330,38 @@ async function flushBuffer() {
   if (!text) return;
   addMsg(text, 'user');
   if (mode === 'help') {
+    // In help mode, deferred commands (task/TTS/model) get a chance to run
+    // here too — we suppressed their immediate dispatch so the user has time
+    // to finish their thought. Anything else is a help-topic question.
+    const tts = detectTtsCmd(text);
+    if (tts) {
+      if (tts === 'on') {
+        ttsEnabled = true;
+        addMsg('TTS on.', 'task');
+        await speak('Voice on.');
+      } else {
+        ttsEnabled = false;
+        window.speechSynthesis.cancel();
+        addMsg('TTS off.', 'task');
+      }
+      return;
+    }
+    const modelTarget = detectModelCmd(text);
+    if (modelTarget) {
+      await sendToContent({ type: 'SWITCH_MODEL', target: modelTarget });
+      return;
+    }
+    const cmd = detectTaskCmd(text);
+    if (cmd) {
+      let reply;
+      if (cmd.action === 'add')           reply = opAdd(cmd.arg);
+      else if (cmd.action === 'remove')   reply = opRemove(cmd.arg);
+      else if (cmd.action === 'complete') reply = opComplete(cmd.arg);
+      else if (cmd.action === 'list')     reply = opList();
+      addMsg(reply, 'task');
+      await speak(reply);
+      return;
+    }
     const reply = answerHelp(text);
     addMsg(reply, 'task');
     await speak(reply);
@@ -365,6 +397,10 @@ async function handleTranscript(rawText) {
     setMode(modeTarget);
     return;
   }
+
+  // In help mode, deferred commands fall through to the buffer so the user
+  // has time to finish their thought; flushBuffer dispatches them on flush.
+  if (mode !== 'help') {
 
   // TTS toggle runs immediately and bypasses the buffer.
   const tts = detectTtsCmd(text);
@@ -412,6 +448,8 @@ async function handleTranscript(rawText) {
     await speak(reply); // no-op while TTS_ENABLED=false
     return;
   }
+
+  } // end of: if (mode !== 'help')
 
   // Whole-utterance buffer commands.
   if (CANCEL_RE.test(text)) {
