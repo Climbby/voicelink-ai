@@ -1,6 +1,4 @@
 node_modules/
 .env
-proxy/data/*.json
-proxy/data/*.tmp
 *.log
 .DS_Store
