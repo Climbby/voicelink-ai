@@ -111,7 +111,8 @@ header {
 .status.speaking  { background: #1c1230; color: #a371f7; }
 .status.error     { background: #2d1010; color: #f85149; }
 
-#micToggle {
+#micToggle,
+#hushBtn {
   background: #21262d;
   border: 1px solid #30363d;
   color: #c9d1d9;
@@ -124,6 +125,7 @@ header {
 }
 #micToggle:hover  { border-color: #58a6ff; color: #58a6ff; }
 #micToggle.active { border-color: #3fb950; color: #3fb950; }
+#hushBtn:hover    { border-color: #f85149; color: #f85149; }
 
 /* ── Transcript ── */
 #transcript {

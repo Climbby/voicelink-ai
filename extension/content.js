@@ -13,6 +13,13 @@ const SELECTORS = {
     'button[data-test-id="send-button"]',
     'button.send-button',
   ],
+  stopBtn: [
+    'button[aria-label="Stop response"]',
+    'button[aria-label="Stop generating"]',
+    'button[aria-label="Stop generating response"]',
+    'button[aria-label*="Stop" i]',
+    'button[data-test-id="stop-button"]',
+  ],
   responseBlock: 'model-response',
   // Selectors that pick ONLY the spoken reply — not the "thinking process"
   // expander, not the screen-reader-only "Gemini said" label.
@@ -266,6 +273,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'SWITCH_MODEL') {
     switchModel(msg.target);
     sendResponse({ ok: true });
+    return;
+  }
+
+  if (msg.type === 'CHECK_CONVERSATION') {
+    const hasHistory = document.querySelectorAll(SELECTORS.responseBlock).length > 0;
+    sendResponse({ hasHistory });
+    return;
+  }
+
+  if (msg.type === 'STOP_GENERATION') {
+    const btn = find(SELECTORS.stopBtn);
+    if (btn) { btn.click(); sendResponse({ ok: true }); }
+    else sendResponse({ ok: false });
     return;
   }
 

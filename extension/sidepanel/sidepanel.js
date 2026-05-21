@@ -4,10 +4,10 @@ const CONTEXT_PROMPT = `From now on, follow these rules for every response in th
 
 // ── State ──────────────────────────────────────────────────────────────
 let micActive = false;
-let sessionReady = false;
 let tasks = [];
 let speaking = false;
 let pendingSessionResolve = null;
+let suppressNextSpeak = false;
 let mode = 'gemini'; // 'gemini' | 'help'
 let ttsVoiceURI = null;
 let ttsRate = 1.05;
@@ -15,6 +15,7 @@ let ttsRate = 1.05;
 // ── DOM ────────────────────────────────────────────────────────────────
 const statusEl   = document.getElementById('status');
 const micBtn     = document.getElementById('micToggle');
+const hushBtn    = document.getElementById('hushBtn');
 const transcriptEl = document.getElementById('transcript');
 const messagesEl = document.getElementById('messages');
 const interimEl  = document.getElementById('interim');
@@ -260,6 +261,16 @@ async function sendToContent(msg) {
     return true;
   } catch (_) {
     return false;
+  }
+}
+
+async function queryContent(msg) {
+  const tab = await getGeminiTab();
+  if (!tab) return null;
+  try {
+    return await chrome.tabs.sendMessage(tab.id, msg);
+  } catch (_) {
+    return null;
   }
 }
 
@@ -535,7 +546,6 @@ async function sendToGemini(text) {
 
 async function initSession() {
   setStatus('sending');
-  addMsg('Initializing session…', 'system');
 
   const tab = await getGeminiTab();
   if (!tab) {
@@ -544,6 +554,17 @@ async function initSession() {
     return false;
   }
 
+  // If the chat already has turns, don't reinject the context prompt — it
+  // would land mid-conversation and Gemini would reply "Ready." into the
+  // ongoing thread.
+  const existing = await queryContent({ type: 'CHECK_CONVERSATION' });
+  if (existing?.hasHistory) {
+    addMsg('Resumed existing chat.', 'system');
+    setStatus(micActive ? 'listening' : 'idle');
+    return true;
+  }
+
+  addMsg('Initializing session…', 'system');
   return new Promise(resolve => {
     pendingSessionResolve = resolve;
     chrome.tabs.sendMessage(tab.id, { type: 'SEND_TO_GEMINI', text: CONTEXT_PROMPT });
@@ -586,13 +607,17 @@ chrome.runtime.onMessage.addListener(async msg => {
     if (pendingSessionResolve) {
       const resolve = pendingSessionResolve;
       pendingSessionResolve = null;
-      sessionReady = true;
       addMsg('Session ready', 'system');
       await speak(msg.text); // speaks "Ready."
       resolve(true);
       return;
     }
     addMsg(msg.text, 'gemini');
+    if (suppressNextSpeak) {
+      suppressNextSpeak = false;
+      setStatus(micActive ? 'listening' : 'idle');
+      return;
+    }
     await speak(msg.text);
   }
 
@@ -625,7 +650,7 @@ async function setMode(newMode) {
   }
 
   addMsg('Gemini mode.', 'task');
-  if (micActive && !sessionReady) {
+  if (micActive) {
     const ok = await initSession();
     if (!ok) return;
   }
@@ -663,7 +688,9 @@ micBtn.addEventListener('click', async () => {
   micBtn.classList.add('active');
 
   // Only init the Gemini session if we'll actually be talking to it.
-  if (mode === 'gemini' && !sessionReady) {
+  // initSession() inspects the Gemini DOM and skips CONTEXT_PROMPT if the
+  // chat already has turns.
+  if (mode === 'gemini') {
     const ok = await initSession();
     if (!ok) {
       micActive = false;
@@ -679,6 +706,16 @@ micBtn.addEventListener('click', async () => {
     micBtn.textContent = '⏺ Start';
     micBtn.classList.remove('active');
   }
+});
+
+// Hush: cut off the current Gemini reply.
+// - Cancels any in-flight TTS.
+// - Suppresses speaking the next reply if it's still being generated.
+// - Asks Gemini's tab to click its own stop-generating button (best effort).
+hushBtn.addEventListener('click', async () => {
+  if (speaking) interruptTTS();
+  suppressNextSpeak = true;
+  await sendToContent({ type: 'STOP_GENERATION' });
 });
 
 taskListEl.addEventListener('change', e => {
